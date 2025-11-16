@@ -71,19 +71,42 @@ public struct BuildMetrics: Codable {
     public let compilationTime: TimeInterval
     public let linkingTime: TimeInterval
     public let modulesLinked: Int
+    public let fileTimings: [FileTiming]
 
     public init(
         filesCompiled: Int = 0,
         linesCompiled: Int = 0,
         compilationTime: TimeInterval = 0.0,
         linkingTime: TimeInterval = 0.0,
-        modulesLinked: Int = 0
+        modulesLinked: Int = 0,
+        fileTimings: [FileTiming] = []
     ) {
         self.filesCompiled = filesCompiled
         self.linesCompiled = linesCompiled
         self.compilationTime = compilationTime
         self.linkingTime = linkingTime
         self.modulesLinked = modulesLinked
+        self.fileTimings = fileTimings
+    }
+}
+
+public struct FileTiming: Codable, Comparable {
+    public let file: String
+    public let duration: TimeInterval
+    public let linesCompiled: Int
+
+    public init(file: String, duration: TimeInterval, linesCompiled: Int = 0) {
+        self.file = file
+        self.duration = duration
+        self.linesCompiled = linesCompiled
+    }
+
+    public static func < (lhs: FileTiming, rhs: FileTiming) -> Bool {
+        return lhs.duration < rhs.duration
+    }
+
+    public static func == (lhs: FileTiming, rhs: FileTiming) -> Bool {
+        return lhs.duration == rhs.duration
     }
 }
 

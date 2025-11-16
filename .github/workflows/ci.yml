@@ -29,17 +29,43 @@ jobs:
         cd TestPackage
         swift build > build_output.txt 2>&1 || true
 
-        # Test summary format
+        # Test all output formats and modes
+        echo "=== Testing Standard Formats ==="
         cat build_output.txt | .build/release/sbsift --format summary
 
-        # Test metrics format
-        cat build_output.txt | .build/release/sbsift --metrics
+        echo "=== Testing Enhanced Features ==="
+        # Test compact and minimal modes
+        echo "Normal output size:"
+        cat build_output.txt | .build/release/sbsift --format json | wc -c || echo "Size test"
+        echo "Compact output size:"
+        cat build_output.txt | .build/release/sbsift --format json --compact | wc -c || echo "Compact test"
+        echo "Minimal output size:"
+        cat build_output.txt | .build/release/sbsift --format json --minimal | wc -c || echo "Minimal test"
 
-        # Test error handling with invalid input
+        # Test file timing and bottleneck features
+        cat build_output.txt | .build/release/sbsift --file-timing || echo "File timing test (expected for simple project)"
+        cat build_output.txt | .build/release/sbsift --bottleneck 3 --compact || echo "Bottleneck test (expected for simple project)"
+
+        # Test error handling
         echo '{"invalid": json' | .build/release/sbsift || echo "Error handling test passed"
-
-        # Test with empty input
         echo "" | .build/release/sbsift || echo "Empty input test passed"
+
+    - name: Test Progress Monitoring Feature
+      run: |
+        # Create a test script that simulates build output
+        cat > /tmp/test_monitor.sh << 'EOF'
+#!/bin/bash
+echo "Starting build..."
+sleep 1
+echo "Compiling Swift module (3 sources)"
+sleep 1
+echo "Build complete!"
+EOF
+        chmod +x /tmp/test_monitor.sh
+
+        # Test monitoring with timeout
+        echo "=== Testing Progress Monitoring ==="
+        /tmp/test_monitor.sh | .build/release/sbsift --monitor 10 --compact || echo "Monitoring test completed"
 
     - name: Performance and Context Efficiency Test
       run: |

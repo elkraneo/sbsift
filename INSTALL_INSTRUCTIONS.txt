@@ -1,0 +1,26 @@
+sbsift Installation Instructions
+===============================
+
+The sbsift binary has been built successfully and is available at:
+    .build/release/sbsift
+
+To install sbsift to your system PATH, run:
+
+    sudo cp .build/release/sbsift /usr/local/bin/
+    sudo chmod +x /usr/local/bin/sbsift
+
+Or simply run the install script:
+
+    chmod +x install.sh && ./install.sh
+
+Usage Examples:
+--------------
+swift build | sbsift
+swift test | sbsift --format summary
+swift build --target MyTarget | sbsift --severity error
+
+Testing sbsift:
+---------------
+You can test sbsift directly from the build directory:
+
+echo "Build output sample" | ./.build/release/sbsift --format summary
