@@ -30,16 +30,16 @@ jobs:
         swift build > build_output.txt 2>&1 || true
 
         # Test summary format
-        cat build_output.txt | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift --format summary
+        cat build_output.txt | .build/release/sbsift --format summary
 
         # Test metrics format
-        cat build_output.txt | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift --metrics
+        cat build_output.txt | .build/release/sbsift --metrics
 
         # Test error handling with invalid input
-        echo '{"invalid": json' | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift || echo "Error handling test passed"
+        echo '{"invalid": json' | .build/release/sbsift || echo "Error handling test passed"
 
         # Test with empty input
-        echo "" | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift || echo "Empty input test passed"
+        echo "" | .build/release/sbsift || echo "Empty input test passed"
 
     - name: Performance and Context Efficiency Test
       run: |
