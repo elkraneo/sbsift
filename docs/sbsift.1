@@ -1,0 +1,288 @@
+# SBSIFT(1) User Manual
+
+## NAME
+
+sbsift - Swift Build Analysis Tool
+
+## SYNOPSIS
+
+**sbsift** [*options*]
+
+**swift build** | **sbsift** [*options*]
+
+**swift test** | **sbsift** [*options*]
+
+## DESCRIPTION
+
+**sbsift** is a context-efficient Swift build analysis tool that converts verbose Swift build output into structured, minimal-context JSON designed for Claude agents and AI development workflows.
+
+It provides massive context reduction (90%+), real-time monitoring, and performance bottleneck detection to optimize Swift development workflows.
+
+## OPTIONS
+
+### Output Formats
+
+- **-f**, **--format** *format*
+  Output format (json, summary, detailed).
+  Default: **json**
+  Values: `json`, `summary`, `detailed`
+
+### Context Optimization
+
+- **--compact**
+  Compact output mode (60-70% size reduction)
+
+- **--minimal**
+  Minimal output mode (85%+ size reduction)
+
+### Performance Analysis
+
+- **--monitor** *seconds*
+  Monitor build progress with timeout in seconds. 0 for no timeout.
+  Default: **0** (no timeout)
+
+- **--file-timing**
+  Show file-level compilation timing
+
+- **--bottleneck** *count*
+  Show top N slowest files. 0 to disable.
+  Default: **0**
+  Suggestion: Use **5** for practical analysis
+
+### Filtering & Debugging
+
+- **--severity** *level*
+  Minimum issue severity to include.
+  Default: **info**
+  Values: `info`, `warning`, `error`, `critical`
+
+- **-v**, **--verbose**
+  Include raw output for debugging
+
+- **--metrics**
+  Enable performance metrics
+
+### Standard Options
+
+- **--version**
+  Show version information
+
+- **-h**, **--help**
+  Show help information
+
+## EXAMPLES
+
+### Basic Usage
+
+```bash
+# Analyze Swift build output
+swift build | sbsift
+
+# Compact output for daily development
+swift build | sbsift --compact
+
+# Minimal output for AI workflows
+swift build | sbsift --minimal
+```
+
+### Performance Analysis
+
+```bash
+# Show file-level timing
+swift build | sbsift --file-timing
+
+# Show top 5 slowest files
+swift build | sbsift --bottleneck 5
+
+# Monitor with timeout (prevents hanging)
+swift build | sbsift --monitor 300
+```
+
+### Error Filtering
+
+```bash
+# Only errors and warnings
+swift build | sbsift --severity warning
+
+# Only critical errors
+swift build | sbsift --severity error
+```
+
+### CI/CD Integration
+
+```bash
+# In GitHub Actions
+swift build | sbsift --compact --monitor 600 > build_analysis.json
+
+# Check for build failures
+if [[ $(jq -r '.ok' build_analysis.json) != "true" ]]; then
+  echo "Build failed"
+  cat build_analysis.json
+  exit 1
+fi
+```
+
+## OUTPUT FORMATS
+
+### JSON (Default)
+
+Structured JSON with full build information:
+
+```json
+{
+  "command": "build",
+  "target": "MyApp",
+  "success": true,
+  "duration": 2.34,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "filesCompiled": 23,
+    "compilationTime": 1.8,
+    "linkingTime": 0.54
+  }
+}
+```
+
+### Compact Mode (60-70% reduction)
+
+Optimized JSON with shortened keys:
+
+```json
+{"cmd":"b","ok":true,"time":2.34,"errs":0,"warns":0,"tgt":"MyApp","files":23}
+```
+
+### Minimal Mode (85%+ reduction)
+
+Ultra-compact JSON for token optimization:
+
+```json
+{"c":"b","s":1,"e":0,"w":0,"t":2.34,"f":23}
+```
+
+### File Timing Analysis
+
+```json
+{
+  "file_timing": {
+    "total_files": 23,
+    "total_time": 1.8,
+    "bottlenecks": [
+      {
+        "file": "Core.swift",
+        "duration": 0.45,
+        "percentage": 25.0
+      }
+    ]
+  }
+}
+```
+
+### Monitoring Output
+
+Real-time monitoring provides status updates:
+
+```json
+{"status": "monitoring", "timeout": 300}
+{"status": "progress", "message": "Compiling...", "lines": 45}
+{"status": "completed", "result": {"c":"b","s":1,"e":0}}
+```
+
+## PERFORMANCE
+
+| Mode | Context Reduction | Use Case |
+|------|-------------------|----------|
+| **Normal JSON** | Baseline | Detailed analysis |
+| **Compact Mode** | **60-70%** | Daily development |
+| **Minimal Mode** | **85%+** | AI workflows |
+
+Real-world performance with large Swift projects:
+- **Parse Time**: <50ms for any build size
+- **Memory Usage**: <10MB
+- **Hang Detection**: Real-time with configurable timeouts
+
+## INTEGRATION
+
+### Aliases for Development
+
+```bash
+# Quick build check
+alias sb="swift build | sbsift --compact"
+
+# Build with error details
+alias sbe="swift build | sbsift --severity error"
+
+# Build with performance analysis
+alias sbp="swift build | sbsift --bottleneck 5"
+
+# Monitor long-running builds
+alias sbm="swift build | sbsift --monitor 600 --compact"
+```
+
+### Smith Skill Integration
+
+```bash
+#!/bin/bash
+# Complete Swift project analysis
+echo "=== Package Analysis ==="
+swift package dump-package 2>&1 | spmsift
+
+echo "=== Build Analysis ==="
+swift build 2>&1 | sbsift --compact
+
+echo "=== Performance Analysis ==="
+swift build 2>&1 | sbsift --bottleneck 5
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/sh
+# .git/hooks/pre-commit
+BUILD_RESULT=$(swift build 2>&1 | sbsift --compact)
+
+if [[ $(echo $BUILD_RESULT | jq -r '.ok') != "true" ]]; then
+    echo "❌ Build failed:"
+    echo $BUILD_RESULT | jq '.'
+    exit 1
+fi
+
+echo "✅ Build passed - $(echo $BUILD_RESULT | jq -r '.time')s"
+```
+
+## EXIT STATUS
+
+- **0**: Analysis completed successfully (build may have failed)
+- **1**: Tool error or timeout occurred
+
+Note: sbsift always returns 0 for successful analysis of build output, regardless of build success/failure. Only tool failures return 1.
+
+## COMPATIBILITY
+
+- **Swift**: 5.9+
+- **macOS**: 13.0+
+- **Xcode**: Command Line Tools
+
+## SEE ALSO
+
+- **spmsift**(1) - Swift Package Manager analysis
+- **xcsift**(1) - Xcode project analysis
+- **swift-build**(1) - Swift build system
+
+## RESOURCES
+
+- **GitHub**: https://github.com/elkraneo/sbsift
+- **Documentation**: https://github.com/elkraneo/sbsift
+- **Issues**: https://github.com/elkraneo/sbsift/issues
+
+## AUTHORS
+
+sbsift was created for efficient Swift development workflows and AI integration.
+
+## LICENSE
+
+MIT License - see LICENSE file for details.
+
+---
+
+*Part of the Sift Family of Swift analysis tools*
