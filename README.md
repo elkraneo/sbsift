@@ -180,4 +180,4 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**sbsift**: Making Swift build analysis AI-friendly.
+**sbsift**: Making Swift build analysis AI-friendly.# Workflow trigger test Sun Nov 16 03:15:44 CET 2025
