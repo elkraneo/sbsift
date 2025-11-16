@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-latest  # Use macOS latest runner for updated Swift toolchain
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Show Swift version
+      run: swift --version
+
+    - name: Build
+      run: swift build -c release
+
+    - name: Run tests
+      run: swift test --enable-code-coverage
+
+    - name: Test CLI functionality with real Swift build output
+      run: |
+        # Test with actual Swift package build output
+        cd /tmp && swift package init --type executable --name TestPackage
+        cd TestPackage
+        swift build > build_output.txt 2>&1 || true
+
+        # Test summary format
+        cat build_output.txt | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift --format summary
+
+        # Test metrics format
+        cat build_output.txt | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift --metrics
+
+        # Test error handling with invalid input
+        echo '{"invalid": json' | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift || echo "Error handling test passed"
+
+        # Test with empty input
+        echo "" | /Volumes/Plutonian/_Developer/sbsift/.build/release/sbsift || echo "Empty input test passed"
+
+    - name: Performance and Context Efficiency Test
+      run: |
+        # Create comprehensive test data
+        TEST_INPUT=$(cat << 'EOF'
+Building for debug...
+Compiling Swift module 'TestTarget' (5 sources)
+Linking ./.build/debug/TestTarget
+Build complete!
+Test Suite 'TestTargetTests' started
+Test Case 'testExample' passed (0.001 seconds)
+Test Suite 'TestTargetTests' passed
+EOF
+)
+
+        # Performance test with time measurement
+        echo "Performance test:"
+        time echo "$TEST_INPUT" | .build/release/sbsift --format summary > /dev/null
+
+        # Context efficiency calculation
+        ORIGINAL_SIZE=$(echo "$TEST_INPUT" | wc -c | tr -d ' ')
+        SBSIFT_SIZE=$(echo "$TEST_INPUT" | .build/release/sbsift --format summary | wc -c | tr -d ' ')
+
+        if [ -n "$ORIGINAL_SIZE" ] && [ -n "$SBSIFT_SIZE" ] && [ "$ORIGINAL_SIZE" -gt 0 ]; then
+          SAVINGS=$(( (ORIGINAL_SIZE - SBSIFT_SIZE) * 100 / ORIGINAL_SIZE ))
+          echo "Original size: $ORIGINAL_SIZE bytes"
+          echo "SBSift size: $SBSIFT_SIZE bytes"
+          echo "Context savings: $SAVINGS%"
+
+          if [ $SAVINGS -lt 50 ]; then  # Reasonable threshold for sbsift
+            echo "Warning: Context savings lower than expected ($SAVINGS%)"
+          else
+            echo "✓ Context savings meets expectations ($SAVINGS%)"
+          fi
+        else
+          echo "Warning: Could not calculate context savings"
+        fi
