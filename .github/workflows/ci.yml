@@ -44,16 +44,13 @@ jobs:
     - name: Performance and Context Efficiency Test
       run: |
         # Create comprehensive test data
-        TEST_INPUT=$(cat << 'EOF'
-Building for debug...
+        TEST_INPUT="Building for debug...
 Compiling Swift module 'TestTarget' (5 sources)
 Linking ./.build/debug/TestTarget
 Build complete!
 Test Suite 'TestTargetTests' started
 Test Case 'testExample' passed (0.001 seconds)
-Test Suite 'TestTargetTests' passed
-EOF
-)
+Test Suite 'TestTargetTests' passed"
 
         # Performance test with time measurement
         echo "Performance test:"
