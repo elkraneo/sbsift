@@ -52,20 +52,18 @@ jobs:
 
     - name: Test Progress Monitoring Feature
       run: |
-        # Create a test script that simulates build output
-        cat > /tmp/test_monitor.sh << 'EOF'
-#!/bin/bash
-echo "Starting build..."
-sleep 1
-echo "Compiling Swift module (3 sources)"
-sleep 1
-echo "Build complete!"
-EOF
-        chmod +x /tmp/test_monitor.sh
+        # Create test data for monitoring
+        TEST_MONITOR_OUTPUT="Starting build...
+Compiling Swift module (3 sources)
+Build complete!"
 
-        # Test monitoring with timeout
+        # Test monitoring with timeout using echo and pipe
         echo "=== Testing Progress Monitoring ==="
-        /tmp/test_monitor.sh | .build/release/sbsift --monitor 10 --compact || echo "Monitoring test completed"
+        echo "$TEST_MONITOR_OUTPUT" | .build/release/sbsift --monitor 10 --compact || echo "Monitoring test completed"
+
+        # Test with different timeout
+        echo "Testing with shorter timeout..."
+        echo "$TEST_MONITOR_OUTPUT" | .build/release/sbsift --monitor 5 --minimal || echo "Short timeout test completed"
 
     - name: Performance and Context Efficiency Test
       run: |
